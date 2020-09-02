@@ -59,7 +59,13 @@ module Gridhook
       def process_event(event)
         processor = Gridhook.config.event_processor
         if processor.respond_to?(:call)
-          processor.call Event.new(event)
+          if Gridhook.config.permit_all_params
+            event_params = event.permit!.to_h
+          else
+            event_params = event.permit(*Gridhook.config.permitted_params).to_h
+          end
+
+          processor.call Event.new(event_params)
         else
           raise InvalidEventProcessor, "Your event processor is nil or "\
             "does not response to a `call' method."
